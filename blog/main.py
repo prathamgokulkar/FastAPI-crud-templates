@@ -4,13 +4,15 @@ from .initDB import engine
 from sqlalchemy.orm import Session
 from .initDB import get_db
 from typing import List
+from .hashing import Hash
+
 
 app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
 
 #Create a blog post
-@app.post("/blog", status_code=status.HTTP_201_CREATED)
+@app.post("/blog", status_code=status.HTTP_201_CREATED, tags = ['Blog'])
 def create_blog_post(req: schema.BlogPost, db: Session = Depends(get_db)):
     new_blog = models.BlogPost(title=req.title, content=req.content)
     db.add(new_blog)
@@ -19,13 +21,13 @@ def create_blog_post(req: schema.BlogPost, db: Session = Depends(get_db)):
     return new_blog
 
 #Get all blog posts
-@app.get("/blog", response_model = List[schema.ShowBlog])
+@app.get("/blog", response_model = List[schema.ShowBlog],tags = ['Blog'])
 def get_blog_post(db:Session = Depends(get_db)):
     blog_post = db.query(models.BlogPost).all()
     return blog_post
 
 #Get a blog post by ID
-@app.get("/blog/{blog_id}", response_model = schema.ShowBlog)
+@app.get("/blog/{blog_id}", response_model = schema.ShowBlog, tags = ['Blog'])
 def get_blog_post_by_id(blog_id: int, db: Session = Depends(get_db)):
     blog_post = db.query(models.BlogPost).filter(models.BlogPost.id == blog_id).first()
 
@@ -35,7 +37,7 @@ def get_blog_post_by_id(blog_id: int, db: Session = Depends(get_db)):
     return blog_post
 
 #Update a blog post
-@app.put("/blog/{blog_id}", status_code=status.HTTP_200_OK)
+@app.put("/blog/{blog_id}", status_code=status.HTTP_200_OK, tags = ['Blog'])
 def update_blog_post(blog_id: int, req: schema.BlogPost, db: Session = Depends(get_db)):
     updated_blog = db.query(models.BlogPost).filter(models.BlogPost.id == blog_id)
     if not updated_blog.first():
@@ -44,7 +46,7 @@ def update_blog_post(blog_id: int, req: schema.BlogPost, db: Session = Depends(g
     db.commit()
 
 #Delete a blog post
-@app.delete("/blog/{blog_id}", status_code = status.HTTP_204_NO_CONTENT)
+@app.delete("/blog/{blog_id}", status_code = status.HTTP_204_NO_CONTENT, tags = ['Blog'])
 def delete_blog_post(blog_id: int, db: Session = Depends(get_db)):
     blog_post = db.query(models.BlogPost).filter(models.BlogPost.id == blog_id).delete(synchronize_session=False)
     if not blog_post:
@@ -53,10 +55,19 @@ def delete_blog_post(blog_id: int, db: Session = Depends(get_db)):
     return {"detail": "Blog post deleted successfully"}
 
 #Create new User
-@app.post("/user", status_code=status.HTTP_201_CREATED)
+@app.post("/user", status_code=status.HTTP_201_CREATED, tags = ['User'], response_model=schema.ShowUser)
 def create_user(req: schema.User, db: Session = Depends(get_db)):
-    new_user = models.User(username = req.username, email = req.email, password = req.password)
+    new_user = models.User(username = req.username, email = req.email, password = Hash.bcrypt(req.password))
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
+
+#Show all users
+@app.get("/user", response_model = List[schema.ShowUser], tags = ['User'])
+def get_users(db: Session = Depends(get_db)):
+    users = db.query(models.User).all()
+    db.refresh(users)
+    if not users:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail="No users found")
+    return users
