@@ -1,11 +1,10 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class BlogPost(BaseModel):
     title: str
     content: str
-
-class ShowBlog(BaseModel):
-    title: str
+    user_id: int
     class Config:
         orm_mode = True
 
@@ -19,5 +18,12 @@ class User(BaseModel):
 class ShowUser(BaseModel):
     username: str
     email: str
+    class Config:
+        orm_mode = True
+
+class ShowBlog(BaseModel):
+    title: str
+    content: str
+    creator: Optional[ShowUser]  
     class Config:
         orm_mode = True
