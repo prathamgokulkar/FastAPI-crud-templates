@@ -3,7 +3,7 @@ from . import schema, models
 from .initDB import engine
 from sqlalchemy.orm import Session
 from .initDB import get_db
-
+from typing import List
 
 app = FastAPI()
 
@@ -19,13 +19,13 @@ def create_blog_post(req: schema.BlogPost, db: Session = Depends(get_db)):
     return new_blog
 
 #Get all blog posts
-@app.get("/blog")
+@app.get("/blog", response_model = List[schema.ShowBlog])
 def get_blog_post(db:Session = Depends(get_db)):
     blog_post = db.query(models.BlogPost).all()
     return blog_post
 
 #Get a blog post by ID
-@app.get("/blog/{blog_id}")
+@app.get("/blog/{blog_id}", response_model = schema.ShowBlog)
 def get_blog_post_by_id(blog_id: int, db: Session = Depends(get_db)):
     blog_post = db.query(models.BlogPost).filter(models.BlogPost.id == blog_id).first()
 
@@ -51,3 +51,12 @@ def delete_blog_post(blog_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail=f"Blog post with id {blog_id} is not available")
     db.commit()
     return {"detail": "Blog post deleted successfully"}
+
+#Create new User
+@app.post("/user", status_code=status.HTTP_201_CREATED)
+def create_user(req: schema.User, db: Session = Depends(get_db)):
+    new_user = models.User(username = req.username, email = req.email, password = req.password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
