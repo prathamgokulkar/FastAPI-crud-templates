@@ -5,18 +5,8 @@ Built for learning and quick prototyping.
 
 ---
 
-## 📂 Features
-- **FastAPI** backend
-- CRUD (Create, Read, Update, Delete) operations
-- HTML templates for UI
-- Modular project structure
-
----
-
 ## 🛠 Tech Stack
 - **Backend:** FastAPI
-- **Frontend Templates:** Jinja2
-- **Database:** SQLite (can be replaced)
 - **Environment:** Python 3.10+
 
 ---
